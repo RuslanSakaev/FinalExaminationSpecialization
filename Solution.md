@@ -252,21 +252,22 @@ CREATE TABLE Animal (
 
 CREATE TABLE Pet (
     id INT PRIMARY KEY AUTO_INCREMENT,
+    class VARCHAR(50),
     animal_id INT,
-    name VARCHAR(50),
     FOREIGN KEY (animal_id) REFERENCES Animal(id)
 );
 Создание таблицы "Вьючные животные" с внешним ключом, наследникаука таблицы "Животное":
 
 CREATE TABLE PackAnimal (
     id INT PRIMARY KEY AUTO_INCREMENT,
+    class VARCHAR(50),
     animal_id INT,
-    name VARCHAR(50),
     FOREIGN KEY (animal_id) REFERENCES Animal(id)
 );
+
 Создание таблиц "Собаки", "Кошки", "Хомяки" с внешним ключом, наследников таблицы "Домашние животные":
 
-CREATE TABLE Dog (
+CREATE TABLE Собаки (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pet_id INT,
     name VARCHAR(50),
@@ -275,7 +276,7 @@ CREATE TABLE Dog (
     FOREIGN KEY (pet_id) REFERENCES Pet(id)
 );
 
-CREATE TABLE Cat (
+CREATE TABLE Кошки (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pet_id INT,
     name VARCHAR(50),
@@ -284,7 +285,7 @@ CREATE TABLE Cat (
     FOREIGN KEY (pet_id) REFERENCES Pet(id)
 );
 
-CREATE TABLE Hamster (
+CREATE TABLE Хомяки (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pet_id INT,
     name VARCHAR(50),
@@ -292,9 +293,10 @@ CREATE TABLE Hamster (
     birth_date DATE,
     FOREIGN KEY (pet_id) REFERENCES Pet(id)
 );
+
 Создание таблиц "Лошади", "Верблюды", "Ослы" с внешним ключом, наследников таблицы "Вьючные животные":
 
-CREATE TABLE Horse (
+CREATE TABLE Лошади (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pack_animal_id INT,
     name VARCHAR(50),
@@ -303,7 +305,7 @@ CREATE TABLE Horse (
     FOREIGN KEY (pack_animal_id) REFERENCES PackAnimal(id)
 );
 
-CREATE TABLE Camel (
+CREATE TABLE Верблюды (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pack_animal_id INT,
     name VARCHAR(50),
@@ -312,7 +314,7 @@ CREATE TABLE Camel (
     FOREIGN KEY (pack_animal_id) REFERENCES PackAnimal(id)
 );
 
-CREATE TABLE Donkey (
+CREATE TABLE Ослы (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pack_animal_id INT,
     name VARCHAR(50),
@@ -327,56 +329,61 @@ mysql> SHOW DATABASES;
 mysql> SHOW TABLE;
 ```
 ![pictures](2.bmp)
+
 ![pictures](3.bmp)
+
 9. Заполнить низкоуровневые таблицы именами(животных), командами которые они выполняют и датами рождения
 Прежде, чем заполнять низкоуровнневые таблицы, заполним родительские:
 ```
 Заполнение таблицы "Животное" соответствующими значениями:
 
-INSERT INTO Animal (name, command, birth_date)
-VALUES ('Домашние животные', '', '1900-01-01'),
-       ('Вьючные животные', '', '1900-01-01');
+INSERT INTO Animal (name)
+VALUES ('Домашние животные'), ('Вьючные животные');
 
 Заполнение таблицы "Домашние животные" соответствующими значениями:
 
-INSERT INTO Pet (animal_id, name, command, birth_date)
-SELECT a.id, a.name, a.command, a.birth_date
-FROM Animal a;
+INSERT INTO Pet (class, animal_id)
+VALUES
+    ('Собаки', 1), -- 1 соответствует id записи 'Домашние животные' в таблице "Animal"
+    ('Кошки', 1),
+    ('Хомяки', 1);
 
 Заполнение таблицы "Вьючные животные" соответствующими значениями:
 
-INSERT INTO PackAnimal (animal_id)
-SELECT id FROM Animal WHERE name = 'Вьючные животные';
+INSERT INTO PackAnimal (class, animal_id)
+VALUES
+    ('Лошади', 2), -- 2 соответствует id записи 'Вьючные животные' в таблице "Animal"
+    ('Верблюды', 2),
+    ('Ослы', 2);
+
 ```
 Заполним низкоуровнивые таблицы:
 
 Таблица "Собаки":
 ```
-INSERT INTO Dog (pet_id)
-SELECT id FROM Pet WHERE animal_id = (
-    SELECT id FROM Animal WHERE name = 'Собаки'
-);
-
-UPDATE Dog
-SET name = CASE
-    WHEN id = 1 THEN 'Ева'
-    WHEN id = 2 THEN 'Жужа'
-    WHEN id = 3 THEN 'Зара'
-    WHEN id = 4 THEN 'Ярик'
-    WHEN id = 5 THEN 'Арчи'
-    WHEN id = 6 THEN 'Буч'
-    WHEN id = 7 THEN 'Веня'
-    WHEN id = 8 THEN 'Бор'
-END,
-command = CASE
-    WHEN id IN (1, 2) THEN 'Сидеть'
-    WHEN id IN (3, 4) THEN 'Ко мне'
-    WHEN id = 5 THEN 'Лежать'
-    WHEN id = 6 THEN 'Жди'
-    WHEN id IN (7, 8) THEN 'Фу'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 8;
+-- Заполняем таблицу Собаки данными
+INSERT INTO Собаки (pet_id, name, command, birth_date)
+SELECT p.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM Pet AS p
+CROSS JOIN (
+    SELECT 'Ева' AS name UNION ALL
+    SELECT 'Жужа' UNION ALL
+    SELECT 'Зара' UNION ALL
+    SELECT 'Ярик' UNION ALL
+    SELECT 'Арчи' UNION ALL
+    SELECT 'Буч' UNION ALL
+    SELECT 'Веня' UNION ALL
+    SELECT 'Бор'
+) AS n
+CROSS JOIN (
+    SELECT 'Сидеть' AS command UNION ALL
+    SELECT 'Ко мне' UNION ALL
+    SELECT 'Лежать' UNION ALL
+    SELECT 'Жди' UNION ALL
+    SELECT 'Фу' UNION ALL
+    SELECT 'Нельзя'
+) AS c
+WHERE p.class = 'Собаки';
 ```
 Таблица "Кошки":
 ```
@@ -385,148 +392,245 @@ SELECT id FROM Pet WHERE animal_id = (
     SELECT id FROM Animal WHERE name = 'Кошки'
 );
 
-UPDATE Cat
-SET name = CASE
-    WHEN id = 1 THEN 'Астра'
-    WHEN id = 2 THEN 'Анора'
-    WHEN id = 3 THEN 'Ваниль'
-    WHEN id = 4 THEN 'Луна'
-    WHEN id = 5 THEN 'Фрости'
-    WHEN id = 6 THEN 'Симба'
-    WHEN id = 7 THEN 'Феникс'
-END,
-command = CASE
-    WHEN id = 1 THEN 'Принеси'
-    WHEN id = 2 THEN 'Поцелуй'
-    WHEN id = 3 THEN 'Прыжок через обруч'
-    WHEN id = 4 THEN 'Стоять на задних лапах'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 7;
+-- Заполняем таблицу Кошки данными
+INSERT INTO Кошки (pet_id, name, command, birth_date)
+SELECT p.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM Pet AS p
+CROSS JOIN (
+    SELECT 'Астра' AS name UNION ALL
+    SELECT 'Анора' UNION ALL
+    SELECT 'Ваниль' UNION ALL
+    SELECT 'Луна' UNION ALL
+    SELECT 'Фрости' UNION ALL
+    SELECT 'Симба' UNION ALL
+    SELECT 'Феникс'
+) AS n
+CROSS JOIN (
+    SELECT 'Принеси' AS command UNION ALL
+    SELECT 'Поцелуй' UNION ALL
+    SELECT 'Прыжок через обруч' UNION ALL
+    SELECT 'Стой на задних лапах'
+) AS c
+WHERE p.class = 'Кошки';
+
 ```
 Таблица "Хомяки":
 ```
-INSERT INTO Hamster (pet_id)
-SELECT id FROM Pet WHERE animal_id = (
-    SELECT id FROM Animal WHERE name = 'Хомяки'
-);
-
-UPDATE Hamster
-SET name = CASE
-    WHEN id = 1 THEN 'Рыжик'
-    WHEN id = 2 THEN 'Умка'
-    WHEN id = 3 THEN 'Черныш'
-    WHEN id = 4 THEN 'Зола'
-    WHEN id = 5 THEN 'Грэй'
-    WHEN id = 6 THEN 'Уайт'
-    WHEN id = 7 THEN 'Голд'
-    WHEN id = 8 THEN 'Сильвер'
-END,
-command = CASE
-    WHEN id = 1 THEN 'стоять'
-    WHEN id = 2 THEN 'прыжок'
-    WHEN id = 3 THEN 'круг'
-    WHEN id = 4 THEN 'перевернуться'
-    WHEN id = 5 THEN 'Перевернуться'
-    WHEN id = 6 THEN 'фу'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 8;
+INSERT INTO Хомяки (pet_id, name, command, birth_date)
+SELECT p.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM Pet AS p
+CROSS JOIN (
+    SELECT 'Рыжик' AS name UNION ALL
+    SELECT 'Умка' UNION ALL
+    SELECT 'Черныш' UNION ALL
+    SELECT 'Зола' UNION ALL
+    SELECT 'Грэй' UNION ALL
+    SELECT 'Уайт' UNION ALL
+    SELECT 'Голд' UNION ALL
+    SELECT 'Сильвер'
+) AS n
+CROSS JOIN (
+    SELECT 'стоять' AS command UNION ALL
+    SELECT 'прыжок' UNION ALL
+    SELECT 'круг' UNION ALL
+    SELECT 'перевернуться' UNION ALL
+    SELECT 'Перевернуться' UNION ALL
+    SELECT 'фу'
+) AS c
+WHERE p.class = 'Хомяки';
 ```
 Таблица "Лошади":
 ```
-INSERT INTO Horse (pack_animal_id)
-SELECT id FROM PackAnimal WHERE animal_id = (
-    SELECT id FROM Animal WHERE name = 'Лошади'
-);
-
-UPDATE Horse
-SET name = CASE
-    WHEN id = 1 THEN 'Апполон'
-    WHEN id = 2 THEN 'Геопард'
-    WHEN id = 3 THEN 'Астон'
-    WHEN id = 4 THEN 'Адонис'
-    WHEN id = 5 THEN 'Жокер'
-    WHEN id = 6 THEN 'Зулан'
-    WHEN id = 7 THEN 'Дымка'
-END,
-command = CASE
-    WHEN id = 1 THEN 'Рысь'
-    WHEN id = 2 THEN 'Хоп'
-    WHEN id = 3 THEN 'Шагом'
-    WHEN id = 4 THEN 'Тише'
-    WHEN id = 5 THEN 'Стой'
-    WHEN id = 6 THEN 'Вперёд'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 7;
+INSERT INTO Лошади (pack_animal_id, name, command, birth_date)
+SELECT pa.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM PackAnimal AS pa
+CROSS JOIN (
+    SELECT 'Апполон' AS name UNION ALL
+    SELECT 'Геопард' UNION ALL
+    SELECT 'Астон' UNION ALL
+    SELECT 'Адонис' UNION ALL
+    SELECT 'Жокер' UNION ALL
+    SELECT 'Зулан' UNION ALL
+    SELECT 'Дымка'
+) AS n
+CROSS JOIN (
+    SELECT 'Рысь' AS command UNION ALL
+    SELECT 'Хоп' UNION ALL
+    SELECT 'Шагом' UNION ALL
+    SELECT 'Тише' UNION ALL
+    SELECT 'Стой' UNION ALL
+    SELECT 'Вперёд'
+) AS c
+WHERE pa.class = 'Лошади';
 ```
 Таблица "Верблюды":
 ```
-INSERT INTO Camel (pack_animal_id)
-SELECT id FROM PackAnimal WHERE animal_id = (
-    SELECT id FROM Animal WHERE name = 'Верблюды'
-);
-
-UPDATE Camel
-SET name = CASE
-    WHEN id = 1 THEN 'Мария'
-    WHEN id = 2 THEN 'Ланцелот'
-    WHEN id = 3 THEN 'Джаред'
-    WHEN id = 4 THEN 'Шоко'
-    WHEN id = 5 THEN 'Фуршет'
-    WHEN id = 6 THEN 'Каберне'
-    WHEN id = 7 THEN 'Оазис'
-END,
-command = CASE
-    WHEN id = 1 THEN 'Вперёд'
-    WHEN id = 2 THEN 'Стой'
-    WHEN id = 3 THEN 'Право'
-    WHEN id = 4 THEN 'Лево'
-    WHEN id = 5 THEN 'Тише'
-    WHEN id = 6 THEN 'лежать'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 7;
+INSERT INTO Верблюды (pack_animal_id, name, command, birth_date)
+SELECT pa.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM PackAnimal AS pa
+CROSS JOIN (
+    SELECT 'Мария' AS name UNION ALL
+    SELECT 'Ланцелот' UNION ALL
+    SELECT 'Джаред' UNION ALL
+    SELECT 'Шоко' UNION ALL
+    SELECT 'Фуршет' UNION ALL
+    SELECT 'Каберне' UNION ALL
+    SELECT 'Оазис'
+) AS n
+CROSS JOIN (
+    SELECT 'Вперёд' AS command UNION ALL
+    SELECT 'Стой' UNION ALL
+    SELECT 'Право' UNION ALL
+    SELECT 'Лево' UNION ALL
+    SELECT 'Тише' UNION ALL
+    SELECT 'лежать'
+) AS c
+WHERE pa.class = 'Верблюды';
 ```
 Таблица "Ослы":
 ```
-INSERT INTO Donkey (pack_animal_id)
-SELECT id FROM PackAnimal WHERE animal_id = (
-    SELECT id FROM Animal WHERE name = 'Ослы'
-);
-
-UPDATE Donkey
-SET name = CASE
-    WHEN id = 1 THEN 'Чили'
-    WHEN id = 2 THEN 'Шрек'
-    WHEN id = 3 THEN 'Бакару'
-    WHEN id = 4 THEN 'Бублик'
-    WHEN id = 5 THEN 'Пончо'
-    WHEN id = 6 THEN 'Пикачу'
-    WHEN id = 7 THEN 'Пончик'
-    WHEN id = 8 THEN 'Кикер'
-    WHEN id = 9 THEN 'Ячмень'
-END,
-command = CASE
-    WHEN id IN (1, 2, 3, 4) THEN 'Вперёд'
-    WHEN id IN (5, 6) THEN 'Стой'
-    WHEN id = 7 THEN 'Право'
-    WHEN id = 8 THEN 'Лево'
-    WHEN id = 9 THEN 'Тише'
-END,
-birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
-WHERE id BETWEEN 1 AND 9;
+INSERT INTO Ослы (pack_animal_id, name, command, birth_date)
+SELECT pa.id, n.name, c.command, DATE_ADD('2000-01-01', INTERVAL FLOOR(RAND() * 10000) DAY)
+FROM PackAnimal AS pa
+CROSS JOIN (
+    SELECT 'Чили' AS name UNION ALL
+    SELECT 'Шрек' UNION ALL
+    SELECT 'Бакару' UNION ALL
+    SELECT 'Бублик' UNION ALL
+    SELECT 'Пончо' UNION ALL
+    SELECT 'Пикачу' UNION ALL
+    SELECT 'Пончик'
+) AS n
+CROSS JOIN (
+    SELECT 'Вперёд' AS command UNION ALL
+    SELECT 'Стой' UNION ALL
+    SELECT 'Право' UNION ALL
+    SELECT 'Лево' UNION ALL
+    SELECT 'Тише' UNION ALL
+    SELECT 'лежать'
+) AS c
+WHERE pa.class = 'Ослы';
 ```
+Проверяем:
+![pictures](4.bmp)
 
 10.  Удалив из таблицы верблюдов, т.к. верблюдов решили перевезти в другой
 питомник на зимовку. Объединить таблицы лошади, и ослы в одну таблицу.
-11.  Создать новую таблицу “молодые животные” в которую попадут все
-животные старше 1 года, но младше 3 лет и в отдельном столбце с точностью
-до месяца подсчитать возраст животных в новой таблице
+```
+DELETE FROM Верблюды;
+```
+![pictures](5.bmp)
+```
+CREATE TABLE ЛошадиОслы AS
+SELECT * FROM Лошади
+UNION ALL
+SELECT * FROM Ослы;
+```
+![pictures](6.bmp)
+
+11.  Создать новую таблицу “молодые животные” в которую попадут все животные старше 1 года, но младше 3 лет и в отдельном столбце с точностью до месяца подсчитать возраст животных в новой таблице
+```
+CREATE TABLE молодые_животные AS
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Собаки' AS class
+FROM Собаки
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+UNION ALL
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Кошки' AS class
+FROM Кошки
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+UNION ALL
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Хомяки' AS class
+FROM Хомяки
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+UNION ALL
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Лошади' AS class
+FROM Лошади
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+UNION ALL
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Верблюды' AS class
+FROM Верблюды
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+UNION ALL
+SELECT 
+    id,
+    name,
+    command,
+    birth_date,
+    TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age_years,
+    TIMESTAMPDIFF(MONTH, birth_date, CURDATE()) AS age_months,
+    'Ослы' AS class
+FROM Ослы
+WHERE birth_date > DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
+  AND birth_date < DATE_SUB(CURDATE(), INTERVAL 1 YEAR);
+```
+![pictures](7.bmp)
+
 12.  Объединить все таблицы в одну, при этом сохраняя поля, указывающие на
 прошлую принадлежность к старым таблицам.
+```
+CREATE TABLE Общая_животные AS
+SELECT 'Собаки' AS таблица, id, name, command, birth_date
+FROM Собаки
+UNION ALL
+SELECT 'Кошки', id, name, command, birth_date
+FROM Кошки
+UNION ALL
+SELECT 'Хомяки', id, name, command, birth_date
+FROM Хомяки
+UNION ALL
+SELECT 'Лошади', id, name, command, birth_date
+FROM Лошади
+UNION ALL
+SELECT 'Верблюды', id, name, command, birth_date
+FROM Верблюды
+UNION ALL
+SELECT 'Ослы', id, name, command, birth_date
+FROM Ослы;
+```
+![pictures](8.bmp)
+
 13.  Создать класс с Инкапсуляцией методов и наследованием по диаграмме.
+
 14.  Написать программу, имитирующую работу реестра домашних животных.
 В программе должен быть реализован следующий функционал:
 
@@ -536,7 +640,7 @@ WHERE id BETWEEN 1 AND 9;
     14.4. обучить животное новым командам;
     14.5. Реализовать навигацию по меню.
 
-15.   Создайте класс Счетчик, у которого есть метод __add()__, увеличивающий̆
+15.    Создайте класс Счетчик, у которого есть метод __add()__, увеличивающий̆
 значение внутренней̆int переменной на 1 при нажатие __“Завести новое животное”__ Сделайте так, чтобы с объектом такого типа можно было работать в
 блоке __try-with-resources__. Нужно бросить исключение, если работа с объектом
 типа счетчик была не в ресурсном __try__ и/или ресурс остался открыт. Значение
