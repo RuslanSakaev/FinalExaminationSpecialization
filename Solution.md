@@ -220,15 +220,305 @@ EOF
 животных войдут классы: собаки, кошки, хомяки, а в класс вьючные животные войдут: Лошади, верблюды и ослы.
 ![pictures](diagram.drawio.png)
 7. В подключенном __MySQL__ репозитории создать базу данных “Друзья человека”
+Проверим политику пакетов, включая информацию о репозиториях, установленх в системе: __sudo apt policy__
+В случае получения ошибки об отсутсвии открытого ключа, отправляем запрос на сервер ключей Ubuntu для его получения:
+__sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 467B942D3A79BD29__
+Обновляем список пакетов и добавляем репозиторий:
+__sudo add-apt-repository 'deb http://repo.mysql.com/apt/ubuntu jammy mysql-8.0'__
+В случае выдачи предупреждения о хранении ключа в старом формате, импортируем его в новый (под суперпользователем):
+__sudo gpg --dearmor < /etc/apt/trusted.gpg > /etc/apt/trusted.gpg.d/mysql.gpg__
+Удаляем старый ключ: __sudo rm /etc/apt/trusted.gpg__
+Проверяем установку дополнительного пакета MySQL:
+__sudo apt install mysql-server__
+Устанавливаем MySQL:
+![pictures](1.bmp)
+Устанавливаем пароль root: __mysqladmin password -u root -p__
+Удаляем ненужные пакеты: __sudo apt autoremove__
+Заходим в MySQL и создаём базу данных:
 ```
 CREATE DATABASE `Друзья человека`;
 ```
 8. Создать таблицы с иерархией из диаграммы в БД
+Заходим в базу данных: __USE `Друзья человека`__
+Вводим команды:
+```
+Создание родительской таблицы "Животное":
+
+CREATE TABLE Animal (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50)
+);
+Создание таблицы "Домашние животные" с внешним ключом, наследника таблицы "Животное":
+
+CREATE TABLE Pet (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    animal_id INT,
+    name VARCHAR(50),
+    FOREIGN KEY (animal_id) REFERENCES Animal(id)
+);
+Создание таблицы "Вьючные животные" с внешним ключом, наследникаука таблицы "Животное":
+
+CREATE TABLE PackAnimal (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    animal_id INT,
+    name VARCHAR(50),
+    FOREIGN KEY (animal_id) REFERENCES Animal(id)
+);
+Создание таблиц "Собаки", "Кошки", "Хомяки" с внешним ключом, наследников таблицы "Домашние животные":
+
+CREATE TABLE Dog (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pet_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pet_id) REFERENCES Pet(id)
+);
+
+CREATE TABLE Cat (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pet_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pet_id) REFERENCES Pet(id)
+);
+
+CREATE TABLE Hamster (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pet_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pet_id) REFERENCES Pet(id)
+);
+Создание таблиц "Лошади", "Верблюды", "Ослы" с внешним ключом, наследников таблицы "Вьючные животные":
+
+CREATE TABLE Horse (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pack_animal_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pack_animal_id) REFERENCES PackAnimal(id)
+);
+
+CREATE TABLE Camel (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pack_animal_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pack_animal_id) REFERENCES PackAnimal(id)
+);
+
+CREATE TABLE Donkey (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pack_animal_id INT,
+    name VARCHAR(50),
+    command VARCHAR(50),
+    birth_date DATE,
+    FOREIGN KEY (pack_animal_id) REFERENCES PackAnimal(id)
+);
+```
+Проверяем созданную БД: 
+```
+mysql> SHOW DATABASES;
+mysql> SHOW TABLE;
+```
+![pictures](2.bmp)
+![pictures](3.bmp)
+9. Заполнить низкоуровневые таблицы именами(животных), командами которые они выполняют и датами рождения
+Прежде, чем заполнять низкоуровнневые таблицы, заполним родительские:
+```
+Заполнение таблицы "Животное" соответствующими значениями:
+
+INSERT INTO Animal (name, command, birth_date)
+VALUES ('Домашние животные', '', '1900-01-01'),
+       ('Вьючные животные', '', '1900-01-01');
+
+Заполнение таблицы "Домашние животные" соответствующими значениями:
+
+INSERT INTO Pet (animal_id, name, command, birth_date)
+SELECT a.id, a.name, a.command, a.birth_date
+FROM Animal a;
+
+Заполнение таблицы "Вьючные животные" соответствующими значениями:
+
+INSERT INTO PackAnimal (animal_id)
+SELECT id FROM Animal WHERE name = 'Вьючные животные';
+```
+Заполним низкоуровнивые таблицы:
+
+Таблица "Собаки":
+```
+INSERT INTO Dog (pet_id)
+SELECT id FROM Pet WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Собаки'
+);
+
+UPDATE Dog
+SET name = CASE
+    WHEN id = 1 THEN 'Ева'
+    WHEN id = 2 THEN 'Жужа'
+    WHEN id = 3 THEN 'Зара'
+    WHEN id = 4 THEN 'Ярик'
+    WHEN id = 5 THEN 'Арчи'
+    WHEN id = 6 THEN 'Буч'
+    WHEN id = 7 THEN 'Веня'
+    WHEN id = 8 THEN 'Бор'
+END,
+command = CASE
+    WHEN id IN (1, 2) THEN 'Сидеть'
+    WHEN id IN (3, 4) THEN 'Ко мне'
+    WHEN id = 5 THEN 'Лежать'
+    WHEN id = 6 THEN 'Жди'
+    WHEN id IN (7, 8) THEN 'Фу'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 8;
+```
+Таблица "Кошки":
+```
+INSERT INTO Cat (pet_id)
+SELECT id FROM Pet WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Кошки'
+);
+
+UPDATE Cat
+SET name = CASE
+    WHEN id = 1 THEN 'Астра'
+    WHEN id = 2 THEN 'Анора'
+    WHEN id = 3 THEN 'Ваниль'
+    WHEN id = 4 THEN 'Луна'
+    WHEN id = 5 THEN 'Фрости'
+    WHEN id = 6 THEN 'Симба'
+    WHEN id = 7 THEN 'Феникс'
+END,
+command = CASE
+    WHEN id = 1 THEN 'Принеси'
+    WHEN id = 2 THEN 'Поцелуй'
+    WHEN id = 3 THEN 'Прыжок через обруч'
+    WHEN id = 4 THEN 'Стоять на задних лапах'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 7;
+```
+Таблица "Хомяки":
+```
+INSERT INTO Hamster (pet_id)
+SELECT id FROM Pet WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Хомяки'
+);
+
+UPDATE Hamster
+SET name = CASE
+    WHEN id = 1 THEN 'Рыжик'
+    WHEN id = 2 THEN 'Умка'
+    WHEN id = 3 THEN 'Черныш'
+    WHEN id = 4 THEN 'Зола'
+    WHEN id = 5 THEN 'Грэй'
+    WHEN id = 6 THEN 'Уайт'
+    WHEN id = 7 THEN 'Голд'
+    WHEN id = 8 THEN 'Сильвер'
+END,
+command = CASE
+    WHEN id = 1 THEN 'стоять'
+    WHEN id = 2 THEN 'прыжок'
+    WHEN id = 3 THEN 'круг'
+    WHEN id = 4 THEN 'перевернуться'
+    WHEN id = 5 THEN 'Перевернуться'
+    WHEN id = 6 THEN 'фу'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 8;
+```
+Таблица "Лошади":
+```
+INSERT INTO Horse (pack_animal_id)
+SELECT id FROM PackAnimal WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Лошади'
+);
+
+UPDATE Horse
+SET name = CASE
+    WHEN id = 1 THEN 'Апполон'
+    WHEN id = 2 THEN 'Геопард'
+    WHEN id = 3 THEN 'Астон'
+    WHEN id = 4 THEN 'Адонис'
+    WHEN id = 5 THEN 'Жокер'
+    WHEN id = 6 THEN 'Зулан'
+    WHEN id = 7 THEN 'Дымка'
+END,
+command = CASE
+    WHEN id = 1 THEN 'Рысь'
+    WHEN id = 2 THEN 'Хоп'
+    WHEN id = 3 THEN 'Шагом'
+    WHEN id = 4 THEN 'Тише'
+    WHEN id = 5 THEN 'Стой'
+    WHEN id = 6 THEN 'Вперёд'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 7;
+```
+Таблица "Верблюды":
+```
+INSERT INTO Camel (pack_animal_id)
+SELECT id FROM PackAnimal WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Верблюды'
+);
+
+UPDATE Camel
+SET name = CASE
+    WHEN id = 1 THEN 'Мария'
+    WHEN id = 2 THEN 'Ланцелот'
+    WHEN id = 3 THEN 'Джаред'
+    WHEN id = 4 THEN 'Шоко'
+    WHEN id = 5 THEN 'Фуршет'
+    WHEN id = 6 THEN 'Каберне'
+    WHEN id = 7 THEN 'Оазис'
+END,
+command = CASE
+    WHEN id = 1 THEN 'Вперёд'
+    WHEN id = 2 THEN 'Стой'
+    WHEN id = 3 THEN 'Право'
+    WHEN id = 4 THEN 'Лево'
+    WHEN id = 5 THEN 'Тише'
+    WHEN id = 6 THEN 'лежать'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 7;
+```
+Таблица "Ослы":
+```
+INSERT INTO Donkey (pack_animal_id)
+SELECT id FROM PackAnimal WHERE animal_id = (
+    SELECT id FROM Animal WHERE name = 'Ослы'
+);
+
+UPDATE Donkey
+SET name = CASE
+    WHEN id = 1 THEN 'Чили'
+    WHEN id = 2 THEN 'Шрек'
+    WHEN id = 3 THEN 'Бакару'
+    WHEN id = 4 THEN 'Бублик'
+    WHEN id = 5 THEN 'Пончо'
+    WHEN id = 6 THEN 'Пикачу'
+    WHEN id = 7 THEN 'Пончик'
+    WHEN id = 8 THEN 'Кикер'
+    WHEN id = 9 THEN 'Ячмень'
+END,
+command = CASE
+    WHEN id IN (1, 2, 3, 4) THEN 'Вперёд'
+    WHEN id IN (5, 6) THEN 'Стой'
+    WHEN id = 7 THEN 'Право'
+    WHEN id = 8 THEN 'Лево'
+    WHEN id = 9 THEN 'Тише'
+END,
+birth_date = DATE(NOW() - INTERVAL FLOOR(RAND() * 365) DAY)
+WHERE id BETWEEN 1 AND 9;
 ```
 
-```
-9. Заполнить низкоуровневые таблицы именами(животных), командами
-которые они выполняют и датами рождения
 10.  Удалив из таблицы верблюдов, т.к. верблюдов решили перевезти в другой
 питомник на зимовку. Объединить таблицы лошади, и ослы в одну таблицу.
 11.  Создать новую таблицу “молодые животные” в которую попадут все
@@ -240,15 +530,11 @@ CREATE DATABASE `Друзья человека`;
 14.  Написать программу, имитирующую работу реестра домашних животных.
 В программе должен быть реализован следующий функционал:
 
-        14.1. Завести новое животное;
-
-        14.2. определять животное в правильный класс;
-
-        14.3. увидеть список команд, которое выполняет животное;
-
-        14.4. обучить животное новым командам;
-
-        14.5. Реализовать навигацию по меню.
+    14.1. Завести новое животное;
+    14.2. определять животное в правильный класс;
+    14.3. увидеть список команд, которое выполняет животное;
+    14.4. обучить животное новым командам;
+    14.5. Реализовать навигацию по меню.
 
 15.   Создайте класс Счетчик, у которого есть метод __add()__, увеличивающий̆
 значение внутренней̆int переменной на 1 при нажатие __“Завести новое животное”__ Сделайте так, чтобы с объектом такого типа можно было работать в
