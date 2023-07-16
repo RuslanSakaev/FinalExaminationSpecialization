@@ -5,15 +5,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+
 public class PetRegistry {
     private List<Animal> animals;
+    private Counter counter;
+    
 
     public PetRegistry() {
         animals = new ArrayList<>();
+        counter = new Counter();
     }
 
-    public void addAnimal(Animal animal) {
+    public void addAnimal(Animal animal) throws Exception {
+        if (animal instanceof Pet) {
+            Pet pet = (Pet) animal;
+            if (pet.getName() == null || pet.getCommands() == null || pet.getBirthDate() == null || pet.getPetType() == null) {
+                throw new IllegalArgumentException("Недостаточно данных для добавления нового питомца.");
+            }
+        } else if (animal instanceof PackAnimal) {
+            PackAnimal packAnimal = (PackAnimal) animal;
+            if (packAnimal.getName() == null || packAnimal.getCommands() == null || packAnimal.getBirthDate() == null || packAnimal.getPackAnimalType() == null) {
+                throw new IllegalArgumentException("Недостаточно данных для добавления нового животного.");
+            }
+        }
         animals.add(animal);
+        counter.add();
     }
 
     public void displayAnimalCommands(String animalName) {
@@ -51,7 +67,7 @@ public class PetRegistry {
     public void displayMenu() {
         Scanner scanner = new Scanner(System.in);
         boolean exit = false;
-
+    
         while (!exit) {
             System.out.println("Меню:");
             System.out.println("1. Добавить новое животное");
@@ -59,10 +75,10 @@ public class PetRegistry {
             System.out.println("3. Обучить животное новым командам");
             System.out.println("4. Выйти");
             System.out.print("Введите ваш выбор: ");
-
+    
             String choiceStr = scanner.nextLine();
             int choice = Integer.parseInt(choiceStr);
-
+    
             switch (choice) {
                 case 1:
                     System.out.print("Введите имя животного: ");
@@ -73,20 +89,24 @@ public class PetRegistry {
                     String birthDate = scanner.nextLine();
                     System.out.print("Выберите вид животного (Pet или PackAnimal): ");
                     String type = scanner.nextLine();
-
-                    if ("Pet".equalsIgnoreCase(type)) {
-                        System.out.print("Выберите вид животного (Cat, Dog, Hamster): ");
-                        String petType = scanner.nextLine();
-                        addAnimal(new Pet(name, commands, birthDate, petType));
-                    } else if ("PackAnimal".equalsIgnoreCase(type)) {
-                        System.out.print("Выберите вид животного (Camel, Donkey, Horse): ");
-                        String packAnimalType = scanner.nextLine();
-                        addAnimal(new PackAnimal(name, commands, birthDate, packAnimalType));
-                    } else {
-                        System.out.println("Неверный тип животного. Попробуйте снова.");
+    
+                    try {
+                        if ("Pet".equalsIgnoreCase(type)) {
+                            System.out.print("Выберите вид животного (Cat, Dog, Hamster): ");
+                            String petType = scanner.nextLine();
+                            addAnimal(new Pet(name, commands, birthDate, petType));
+                        } else if ("PackAnimal".equalsIgnoreCase(type)) {
+                            System.out.print("Выберите вид животного (Camel, Donkey, Horse): ");
+                            String packAnimalType = scanner.nextLine();
+                            addAnimal(new PackAnimal(name, commands, birthDate, packAnimalType));
+                        } else {
+                            System.out.println("Неверный тип животного. Попробуйте снова.");
+                        }
+                        
+                       System.out.println("Животное добавлено в реестр."); 
+                    } catch (Exception e) {
+                        System.out.println("Произошло исключение: " + e.getMessage());
                     }
-
-                    System.out.println("Животное добавлено в реестр.");
                     break;
                 case 2:
                     System.out.print("Введите имя животного: ");
