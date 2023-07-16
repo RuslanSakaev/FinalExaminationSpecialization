@@ -9,33 +9,46 @@ import java.util.Scanner;
 public class PetRegistry {
     private List<Animal> animals;
     private Counter counter;
+    private String filename;
+    
+    public PetRegistry(String filename) {
+        animals = new ArrayList<>();
+        counter = new Counter();
+        this.filename = filename;
+        loadAnimalsFromFile();
+    }
     
     public void viewAnimalTable() {
         System.out.println("Таблица с животными:");
         System.out.println("Имя\t\tТип\t\tКоманды\t\tДата рождения");
-    
+
         for (Animal animal : animals) {
-            String animalType = "";
-            String commands = animal.getCommands();
-            String birthDate = animal.getBirthDate();
-    
+            String animalType;
             if (animal instanceof Pet) {
-                Pet pet = (Pet) animal;
                 animalType = "Pet";
-                System.out.printf("%s\t\t%s\t\t%s\t\t%s\n", pet.getName(), animalType, commands, birthDate);
             } else if (animal instanceof PackAnimal) {
-                PackAnimal packAnimal = (PackAnimal) animal;
                 animalType = "PackAnimal";
-                System.out.printf("%s\t\t%s\t\t%s\t\t%s\n", packAnimal.getName(), animalType, commands, birthDate);
+            } else {
+                animalType = "Неизвестный тип";
             }
+            System.out.printf("%s\t\t%s\t\t%s\t\t%s\n", animal.getName(), animalType, animal.getCommands(), animal.getBirthDate());
         }
     }
+    
 
-    public PetRegistry() {
-        animals = new ArrayList<>();
-        counter = new Counter();
+    private void loadAnimalsFromFile() {
+        PetFileWriter fileWriter = new PetFileWriter();
+        animals = fileWriter.readFromFile(filename);
+        // Обновляем счетчик животных, учитывая количество загруженных из файла
+        counter.setCount(animals.size());
     }
 
+    private void saveDataToFile() {
+        PetFileWriter fileWriter = new PetFileWriter();
+        fileWriter.writeToFile(animals, filename);
+        System.out.println("Данные успешно сохранены в файл.");
+    }
+    
     public void addAnimal(Animal animal) throws Exception {
         if (animal instanceof Pet) {
             Pet pet = (Pet) animal;
@@ -51,6 +64,7 @@ public class PetRegistry {
         animals.add(animal);
         counter.add();
     }
+    
 
     public void displayAnimalCommands(String animalName) {
         for (Animal animal : animals) {
@@ -62,7 +76,7 @@ public class PetRegistry {
         }
         System.out.println("Животное не найдено.");
     }
-
+    
     public void teachAnimalCommands(String animalName, String newCommands) {
         for (Animal animal : animals) {
             if (animal.getName().equalsIgnoreCase(animalName)) {
@@ -83,6 +97,40 @@ public class PetRegistry {
             return "Неизвестный тип";
         }
     }
+    
+    private void removeAnimal(String animalName) {
+        Animal removedAnimal = null;
+        for (Animal animal : animals) {
+            if (animal.getName().equalsIgnoreCase(animalName)) {
+                removedAnimal = animal;
+                break;
+            }
+        }
+        if (removedAnimal != null) {
+            animals.remove(removedAnimal);
+            counter.remove();
+            System.out.println("Животное " + animalName + " успешно удалено из реестра.");
+        } else {
+            System.out.println("Животное не найдено.");
+        }
+    }
+
+    private void editAnimal(String animalName) {
+        for (Animal animal : animals) {
+            if (animal.getName().equalsIgnoreCase(animalName)) {
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Введите новое имя животного: ");
+                String newName = scanner.nextLine();
+                System.out.print("Введите новые команды для животного: ");
+                String newCommands = scanner.nextLine();
+                animal.setName(newName);
+                animal.setCommands(newCommands);
+                System.out.println("Запись о животном успешно отредактирована.");
+                return;
+            }
+        }
+        System.out.println("Животное не найдено.");
+    }
 
     public void displayMenu() {
         Scanner scanner = new Scanner(System.in);
@@ -94,16 +142,18 @@ public class PetRegistry {
             System.out.println("2. Посмотреть команды животного");
             System.out.println("3. Обучить животное новым командам");
             System.out.println("4. Вывести список всех животных");
-            System.out.println("5. Выйти");
+            System.out.println("5. Удалить запись о животном");
+            System.out.println("6. Редактировать запись о животном");
+            System.out.println("7. Выйти");
             System.out.print("Введите ваш выбор: ");
-    
+
             String choiceStr = scanner.nextLine();
             int choice = Integer.parseInt(choiceStr);
     
             switch (choice) {
                 case 1:
-                    System.out.print("Введите имя животного: ");
-                    String name = scanner.nextLine();
+                System.out.print("Введите имя животного: ");
+                String name = scanner.nextLine();
                     System.out.print("Введите команды для животного: ");
                     String commands = scanner.nextLine();
                     System.out.print("Введите дату рождения животного: ");
@@ -145,6 +195,16 @@ public class PetRegistry {
                     viewAnimalTable();
                     break;
                 case 5:
+                    System.out.print("Введите имя животного для удаления: ");
+                    String animalNameToDelete = scanner.nextLine();
+                    removeAnimal(animalNameToDelete);
+                    break;
+                case 6:
+                    System.out.print("Введите имя животного для редактирования: ");
+                    String animalNameToEdit = scanner.nextLine();
+                    editAnimal(animalNameToEdit);
+                    break;
+                case 7:
                     exit = true;
                     System.out.println("Завершение программы.");
                     break;
@@ -157,9 +217,12 @@ public class PetRegistry {
     }
 
     public static void main(String[] args) {
-        PetRegistry registry = new PetRegistry();
+        String filename = "pets.txt"; // Имя файла для хранения данных
+        PetRegistry registry = new PetRegistry(filename);
         registry.displayMenu();
+        registry.saveDataToFile();
     }
+
 }
 
 
