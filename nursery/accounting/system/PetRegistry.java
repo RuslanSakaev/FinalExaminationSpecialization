@@ -118,15 +118,16 @@ public class PetRegistry {
     private void editAnimal(String animalName) {
         for (Animal animal : animals) {
             if (animal.getName().equalsIgnoreCase(animalName)) {
-                Scanner scanner = new Scanner(System.in);
-                System.out.print("Введите новое имя животного: ");
-                String newName = scanner.nextLine();
-                System.out.print("Введите новые команды для животного: ");
-                String newCommands = scanner.nextLine();
-                animal.setName(newName);
-                animal.setCommands(newCommands);
-                System.out.println("Запись о животном успешно отредактирована.");
-                return;
+                try (Scanner scanner = new Scanner(System.in)) {
+                    System.out.print("Введите новое имя животного: ");
+                    String newName = scanner.nextLine();
+                    System.out.print("Введите новые команды для животного: ");
+                    String newCommands = scanner.nextLine();
+                    animal.setName(newName);
+                    animal.setCommands(newCommands);
+                    System.out.println("Запись о животном успешно отредактирована.");
+                    return;
+                }
             }
         }
         System.out.println("Животное не найдено.");
