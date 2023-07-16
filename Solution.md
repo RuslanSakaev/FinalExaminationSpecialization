@@ -648,4 +648,6 @@ FROM Ослы;
 типа счетчик была не в ресурсном __try__ и/или ресурс остался открыт. Значение
 считать в ресурсе __try__, если при заведения животного заполнены все поля.
 
-Решения по пунктам 13, 14, 15 размещены на GitHub - [Ссылка на код Java](https://github.com/RuslanSakaev/FinalExaminationSpecialization/tree/main/nursery/accounting/system)
+![pictures](10.bmp)
+
+Решения по пунктам 13, 14, 15 размещены на GitHub - [Ссылка на код Java](https://github.com/RuslanSakaev/FinalExaminationSpecialization/tree/main/nursery/accounting/system).
