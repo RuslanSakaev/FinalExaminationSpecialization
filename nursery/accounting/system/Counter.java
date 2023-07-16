@@ -1,24 +1,28 @@
 package nursery.accounting.system;
 
-public class Counter implements AutoCloseable {
+public class Counter {
     private int value;
 
     public Counter() {
         this.value = 0;
     }
 
+    public void setCount(int count) {
+        value = count;
+    }
+
     public void add() {
         value++;
     }
 
-    public int getValue() {
-        return value;
+    public void remove() {
+        value--;
+        if (value < 0) {
+            value = 0; // Убеждаемся, что счетчик никогда не становится отрицательным
+        }
     }
 
-    @Override
-    public void close() throws Exception {
-        if (value > 0) {
-            throw new IllegalStateException("Ресурс не был корректно закрыт. Значение: " + value);
-        }
+    public int getValue() {
+        return value;
     }
 }
