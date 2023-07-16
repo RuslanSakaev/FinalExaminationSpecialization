@@ -10,6 +10,26 @@ public class PetRegistry {
     private List<Animal> animals;
     private Counter counter;
     
+    public void viewAnimalTable() {
+        System.out.println("Таблица с животными:");
+        System.out.println("Имя\t\tТип\t\tКоманды\t\tДата рождения");
+    
+        for (Animal animal : animals) {
+            String animalType = "";
+            String commands = animal.getCommands();
+            String birthDate = animal.getBirthDate();
+    
+            if (animal instanceof Pet) {
+                Pet pet = (Pet) animal;
+                animalType = "Pet";
+                System.out.printf("%s\t\t%s\t\t%s\t\t%s\n", pet.getName(), animalType, commands, birthDate);
+            } else if (animal instanceof PackAnimal) {
+                PackAnimal packAnimal = (PackAnimal) animal;
+                animalType = "PackAnimal";
+                System.out.printf("%s\t\t%s\t\t%s\t\t%s\n", packAnimal.getName(), animalType, commands, birthDate);
+            }
+        }
+    }
 
     public PetRegistry() {
         animals = new ArrayList<>();
@@ -73,7 +93,8 @@ public class PetRegistry {
             System.out.println("1. Добавить новое животное");
             System.out.println("2. Посмотреть команды животного");
             System.out.println("3. Обучить животное новым командам");
-            System.out.println("4. Выйти");
+            System.out.println("4. Вывести список всех животных");
+            System.out.println("5. Выйти");
             System.out.print("Введите ваш выбор: ");
     
             String choiceStr = scanner.nextLine();
@@ -102,7 +123,7 @@ public class PetRegistry {
                         } else {
                             System.out.println("Неверный тип животного. Попробуйте снова.");
                         }
-                        
+
                        System.out.println("Животное добавлено в реестр."); 
                     } catch (Exception e) {
                         System.out.println("Произошло исключение: " + e.getMessage());
@@ -121,6 +142,9 @@ public class PetRegistry {
                     teachAnimalCommands(animalName2, newCommands);
                     break;
                 case 4:
+                    viewAnimalTable();
+                    break;
+                case 5:
                     exit = true;
                     System.out.println("Завершение программы.");
                     break;
