@@ -23,4 +23,22 @@ public class Animal {
     public String getBirthDate() {
         return birthDate;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setCommands(String commands) {
+        this.commands = commands;
+    }
+
+    public void setBirthDate(String birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Имя: " + name + ", Команды: " + commands + ", Дата рождения: " + birthDate;
+    }
 }
+
